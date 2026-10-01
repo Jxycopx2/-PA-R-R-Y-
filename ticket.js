@@ -325,7 +325,6 @@ const createWeb = (function () {
     const module = {};
     module.exports = function createWeb({ escapeHtml, formatDiscordText, renderComponent, timeAgo, shopName }) {
         const FAVICON = `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧾</text></svg>">`;
-        ด้
         const BASE_CSS = `
     :root{
         --bg:#f6f1e9; --card:#fffdf8; --line:rgba(31,42,46,.12);
