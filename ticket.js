@@ -432,7 +432,8 @@ const createWeb = (function () {
         }
 
         function index(list) {
-            const sorted = [...list].sort((a, b) => b.createdAt - a.createdAt);
+            const safeList = Array.isArray(list) ? list : [];
+            const sorted = [...safeList].sort((a, b) => b.createdAt - a.createdAt);
             const msgs = sorted.reduce((s, t) => s + (t.messageCount || 0), 0);
             const cards = sorted.map(t => `
             <a class="card" href="/transcript/${t.id}" data-s="${escapeHtml((t.channelName + ' ' + t.ownerTag).toLowerCase())}">
