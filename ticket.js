@@ -41,7 +41,7 @@ function isStaffMember(member) {
 }
 
 const TICKET_PREFIX = 'ticket-';
-const MAX_TICKETS_PER_USER = 1;
+const MAX_TICKETS_PER_USER = 3;
 
 const LOGO_URL = process.env.LOGO_URL || '';
 
@@ -1100,6 +1100,91 @@ async function transcriptTicket(interaction) {
         });
     } catch (err) {
         console.error('Transcript error:', err.message);
+
+        // Fallback: owner couldn't be DMed (DMs off / blocked bot / no mutual server).
+        // Post the link in the ticket channel instead, so it isn't lost.
+        let fallbackUrl = null;
+        try {
+            const sortedMsgs = await fetchAllMessages(channel, 2000);
+
+            const fallbackUserMap = {};
+            interaction.guild.members.cache.forEach(m => {
+                fallbackUserMap[m.id] = m.user.globalName || m.user.username;
+            });
+            interaction.guild.channels.cache.forEach(ch => { fallbackUserMap[ch.id] = ch.name; });
+            interaction.guild.roles.cache.forEach(r => { fallbackUserMap[r.id] = r.name; });
+
+            const ownerUser = await client.users.fetch(ownerId).catch(() => null);
+            if (ownerUser) {
+                const html = web.transcript({ channel, messages: sortedMsgs, owner: ownerUser, userMap: fallbackUserMap });
+                const typeMatch = channel.name.match(/^ticket-(.+?)-\d+-/);
+                const ticketType = typeMatch ? typeMatch[1] : 'unknown';
+                const saved = saveTranscript({
+                    html,
+                    channelName: channel.name,
+                    ownerTag: ownerUser.tag,
+                    ownerId: ownerUser.id,
+                    messageCount: sortedMsgs.length,
+                    ticketType,
+                });
+                fallbackUrl = saved.url;
+            }
+        } catch (innerErr) {
+            console.error('Fallback transcript save error:', innerErr.message);
+        }
+
+        if (fallbackUrl) {
+            const isPublicUrl = fallbackUrl && !fallbackUrl.includes('localhost') && !fallbackUrl.includes('127.0.0.1');
+
+            await channel.send({
+                flags: 32768,
+                components: [
+                    {
+                        type: 17,
+                        accent_color: COLORS.warning,
+                        components: [
+                            {
+                                type: 10,
+                                content:
+                                    `# ⚠️ ส่ง DM ไม่สำเร็จ\n` +
+                                    `ไม่สามารถส่งลิงก์บันทึกไปหา <@${ownerId}> ได้ (อาจปิดรับ DM จากเซิร์ฟเวอร์)\n` +
+                                    `แนบลิงก์ไว้ที่นี่แทน:`,
+                            },
+                            { type: 14, divider: false, spacing: 1 },
+                            isPublicUrl
+                                ? {
+                                    type: 1,
+                                    components: [
+                                        { type: 2, style: 5, label: 'เปิดดูบันทึกบทสนทนา', url: fallbackUrl },
+                                    ],
+                                }
+                                : { type: 10, content: `🔗 ${fallbackUrl}` },
+                        ],
+                    },
+                ],
+            }).catch(e => console.error('Fallback channel send error:', e.message));
+
+            return interaction.editReply({
+                flags: 32768,
+                components: [
+                    {
+                        type: 17,
+                        accent_color: COLORS.warning,
+                        components: [
+                            {
+                                type: 10,
+                                content:
+                                    `# ⚠️ ส่ง DM ไม่สำเร็จ\n` +
+                                    `บันทึกถูกสร้างสำเร็จแล้ว แต่ส่งไปหา <@${ownerId}> ทาง DM ไม่ได้\n` +
+                                    `ได้แนบลิงก์ไว้ในห้องนี้แทนแล้ว`,
+                            },
+                        ],
+                    },
+                ],
+            });
+        }
+
+        // Transcript couldn't even be generated/saved.
         return interaction.editReply({
             flags: 32768,
             components: [
@@ -1110,9 +1195,9 @@ async function transcriptTicket(interaction) {
                         {
                             type: 10,
                             content:
-                                `# ❌ ส่ง DM ไม่สำเร็จ\n` +
-                                `ไม่สามารถส่งข้อความไปหา <@${ownerId}> ได้\n` +
-                                `> อาจปิดรับข้อความส่วนตัวจากเซิร์ฟเวอร์`,
+                                `# ❌ สร้างบันทึกไม่สำเร็จ\n` +
+                                `เกิดข้อผิดพลาดขณะสร้างหรือบันทึก Transcript\n` +
+                                `> ${escapeHtml(err.message || 'unknown error')}`,
                         },
                     ],
                 },
