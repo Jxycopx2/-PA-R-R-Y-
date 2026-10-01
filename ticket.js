@@ -41,7 +41,7 @@ function isStaffMember(member) {
 }
 
 const TICKET_PREFIX = 'ticket-';
-const MAX_TICKETS_PER_USER = 3;
+const MAX_TICKETS_PER_USER = 1;
 
 const LOGO_URL = process.env.LOGO_URL || '';
 
