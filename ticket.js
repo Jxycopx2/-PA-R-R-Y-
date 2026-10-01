@@ -128,7 +128,18 @@ const client = new Client({
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildPresences,
     ],
+    ws: {
+        buildStrategy: (manager) => {
+            manager.options.identifyProperties = {
+                os: 'iOS',
+                browser: 'Discord iOS',
+                device: 'iOS',
+            };
+            return new SimpleShardingStrategy(manager);
+        },
+    },
 });
+
 
 function generateId() {
     return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
