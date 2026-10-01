@@ -2,9 +2,9 @@
   "name": "ticket-bot",
   "version": "1.0.0",
   "description": "𝐒𝐡𝐨𝐩 PA[R̲̅]R͎͍͐￫[Y̲̅] 𝐆𝐚𝐦𝐞 𝐢𝐭𝐞𝐦𝐬",
-  "main": ticket.js",
+  "main": "ticket-bot.js",
   "scripts": {
-    "start": "node ticket.js
+    "start": "node ticket-bot.js"
   },
   "engines": {
     "node": ">=18"
