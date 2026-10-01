@@ -386,10 +386,9 @@ const createWeb = (function () {
             const total = messages.length;
             const created = messages[0] ? messages[0].createdTimestamp : Date.now();
 
-            // กำหนด Timezone เป็นเวลาไทย ('Asia/Bangkok') เสมอ
             const fmt = (ts, o = {}) => new Date(ts).toLocaleString('th-TH', {
                 timeZone: 'Asia/Bangkok',
-                calendar: 'buddhist', // หากต้องการปี พ.ศ. ให้คงไว้ / ถ้าต้องการ ค.ศ. ให้เปลี่ยนเป็น 'gregory'
+                calendar: 'buddhist',
                 ...o
             });
 
@@ -470,13 +469,23 @@ ${GFONTS}
             const safeList = Array.isArray(list) ? list : [];
             const sorted = [...safeList].sort((a, b) => b.createdAt - a.createdAt);
             const msgs = sorted.reduce((s, t) => s + (t.messageCount || 0), 0);
-            const cards = sorted.map(t => `
-            <a class="card" href="/transcript/${t.id}" data-s="${escapeHtml((t.channelName + ' ' + t.ownerTag).toLowerCase())}">
-                <div class="c-top"><span class="chip">${escapeHtml(t.ticketType || 'other')}</span><small>${timeAgo(t.createdAt)}</small></div>
+            const cards = sorted.map(t => {
+                const avatarUrl = t.ownerAvatar || t.owner?.displayAvatarURL?.({ extension: 'png', size: 128 }) || 'https://cdn.discordapp.com/embed/avatars/0.png';
+                
+                return `
+            <div class="card" data-s="${escapeHtml((t.channelName + ' ' + t.ownerTag).toLowerCase())}">
+                <div class="c-top">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <img class="card-avatar" src="${escapeHtml(avatarUrl)}" alt="Avatar">
+                        <span class="chip">${escapeHtml(t.ticketType || 'other')}</span>
+                    </div>
+                    <small>${timeAgo(t.createdAt)}</small>
+                </div>
                 <h3>${escapeHtml(t.channelName)}</h3>
                 <p>👤 ${escapeHtml(t.ownerTag)}</p>
                 <p>💬 ${t.messageCount || 0} ข้อความ</p>
-            </a>`).join('');
+            </div>`;
+            }).join('');
 
             return `<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -499,13 +508,9 @@ ${GFONTS}
     #q:focus{border-color:var(--pink);box-shadow:0 0 0 3px rgba(244,114,182,.18)}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
     .card{position:relative;background:var(--card);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-        border:1px solid rgba(255,255,255,.7);border-radius:18px;padding:17px;text-decoration:none;color:inherit;
-        transition:.18s ease;box-shadow:0 4px 16px rgba(168,110,200,.1)}
-    .card::before{content:'';position:absolute;inset:0;border-radius:18px;padding:1px;
-        background:linear-gradient(135deg,var(--pink),var(--purple),var(--cyan));opacity:0;transition:.18s;
-        -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
-    .card:hover{transform:translateY(-4px);box-shadow:0 14px 28px rgba(168,110,200,.22)}
-    .card:hover::before{opacity:1}
+        border:1px solid rgba(255,255,255,.7);border-radius:18px;padding:17px;color:inherit;
+        box-shadow:0 4px 16px rgba(168,110,200,.1)}
+    .card-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid #fff;box-shadow:0 2px 5px rgba(168,110,200,.2)}
     .c-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
     .c-top small{color:var(--text-faint);font-weight:600}
     .card h3{font-size:16px;margin-bottom:5px;overflow-wrap:anywhere;color:var(--text-primary)}
