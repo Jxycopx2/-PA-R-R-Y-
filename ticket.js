@@ -139,7 +139,10 @@ function saveTranscript({ html, channelName, ownerTag, ownerId, messageCount, ti
     fs.writeFileSync(path.join(TRANSCRIPT_DIR, `${id}.html`), html, 'utf-8');
 
     let data = { transcripts: [] };
-    try { data = JSON.parse(fs.readFileSync(INDEX_FILE, 'utf-8')); } catch { }
+    try {
+        const parsed = JSON.parse(fs.readFileSync(INDEX_FILE, 'utf-8'));
+        data = (parsed && Array.isArray(parsed.transcripts)) ? parsed : { transcripts: [] };
+    } catch { }
 
     data.transcripts.push({
         id, channelName, ownerTag, ownerId, messageCount, ticketType,
@@ -324,25 +327,45 @@ function formatDiscordText(text, userMap = {}) {
 const createWeb = (function () {
     const module = {};
     module.exports = function createWeb({ escapeHtml, formatDiscordText, renderComponent, timeAgo, shopName }) {
-        const FAVICON = `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧾</text></svg>">`;
+        const FAVICON = `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐰</text></svg>">`;
+        const GFONTS = `<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">`;
         const BASE_CSS = `
     :root{
-        --bg:#f6f1e9; --card:#fffdf8; --line:rgba(31,42,46,.12);
-        --brand:#0f766e; --brand-soft:#e6f2ef; --pop:#f97316;
-        --text-primary:#1f2a2e; --text-secondary:#3d4a4f; --text-muted:#6b7a80; --text-faint:#98a4a8;
-        --accent-2:#0f766e; --bg-tertiary:#efe8da; --border:rgba(31,42,46,.12);
+        --pink:#f472b6; --purple:#a78bfa; --cyan:#22d3ee; --lilac:#c4b5fd;
+        --bg-a:#ffd9ef; --bg-b:#e3c9fb; --bg-c:#bdeeff;
+        --card:rgba(255,255,255,.82); --card-solid:#ffffff; --line:rgba(140,105,185,.18);
+        --brand:#c026a3; --brand-soft:#fbe3f6; --pop:#f97316;
+        --text-primary:#3a2a52; --text-secondary:#5d4a78; --text-muted:#8b78a8; --text-faint:#b2a3cc;
+        --accent-2:#0891b2; --bg-tertiary:#f3e9ff; --border:rgba(140,105,185,.18);
+        --shadow-soft:0 10px 30px rgba(168,110,200,.18);
     }
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Noto Sans Thai','Sarabun',-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text-primary);font-size:15px;line-height:1.6}
+    html{scroll-behavior:smooth}
+    body{
+        font-family:'Noto Sans Thai','Sarabun',-apple-system,'Segoe UI',sans-serif;
+        color:var(--text-primary);font-size:15px;line-height:1.65;min-height:100vh;
+        background:
+            radial-gradient(circle at 12% 18%, rgba(255,255,255,.65) 0, rgba(255,255,255,0) 4%),
+            radial-gradient(circle at 78% 8%, rgba(255,255,255,.55) 0, rgba(255,255,255,0) 3%),
+            radial-gradient(circle at 88% 64%, rgba(255,255,255,.5) 0, rgba(255,255,255,0) 3%),
+            radial-gradient(circle at 30% 85%, rgba(255,255,255,.5) 0, rgba(255,255,255,0) 3%),
+            linear-gradient(145deg, var(--bg-a) 0%, var(--bg-b) 45%, var(--bg-c) 100%);
+        background-attachment:fixed;
+    }
+    h1,h2,h3,.shop,.hero h1,.head h1{font-family:'Baloo 2','Noto Sans Thai',sans-serif}
     a{color:var(--brand)}
-    .top{background:var(--card);border-bottom:3px solid var(--pop);position:sticky;top:0;z-index:5}
+    .top{background:rgba(255,255,255,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+        border-bottom:1px solid rgba(255,255,255,.6);box-shadow:0 2px 16px rgba(168,110,200,.1);position:sticky;top:0;z-index:5}
     .top-in{max-width:900px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-    .shop{font-weight:800;color:var(--brand);letter-spacing:.2px;text-decoration:none}
-    .chip{background:var(--brand-soft);color:var(--brand);border-radius:999px;padding:3px 12px;font-size:12px;font-weight:600}
+    .shop{font-weight:800;letter-spacing:.2px;text-decoration:none;font-size:17px;
+        background:linear-gradient(90deg,var(--pink),var(--purple) 55%,var(--accent-2));
+        -webkit-background-clip:text;background-clip:text;color:transparent}
+    .chip{background:var(--brand-soft);color:var(--brand);border-radius:999px;padding:3px 12px;font-size:12px;font-weight:700;
+        border:1px solid rgba(192,38,163,.15)}
     .wrap{max-width:900px;margin:0 auto;padding:24px 20px 60px}
-    code{color:var(--brand)!important;background:var(--brand-soft)!important;border-color:#b7d8d1!important}
-    .mention{background:#fff1e6;color:#c2410c;border-radius:4px;padding:0 5px;font-weight:600}
-    .embed{margin-top:8px;padding:14px 16px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--brand);border-radius:12px;max-width:600px}
+    code{color:var(--brand)!important;background:var(--brand-soft)!important;border-color:#f0c9e8!important}
+    .mention{background:#eaf7fb;color:#0e7490;border-radius:4px;padding:0 5px;font-weight:600}
+    .embed{margin-top:8px;padding:14px 16px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--purple);border-radius:12px;max-width:600px;box-shadow:0 2px 10px rgba(168,110,200,.08)}
     .embed-author{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;margin-bottom:8px}
     .embed-author img{width:20px;height:20px;border-radius:50%}
     .embed-title{font-weight:700;margin-bottom:6px}
@@ -351,11 +374,12 @@ const createWeb = (function () {
     .field-name{font-size:12px;font-weight:700;color:var(--brand)}
     .field-value{font-size:14px;color:var(--text-secondary)}
     .embed-footer{font-size:11px;color:var(--text-faint);margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
-    .divider{height:1px;background:var(--line)}
+    .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(140,105,185,.3),transparent)}
     .action-row{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
-    .btn{display:inline-flex;align-items:center;padding:6px 14px;border-radius:999px;font-size:13px;background:var(--brand-soft);color:var(--brand);border:1px solid #b7d8d1}
+    .btn{display:inline-flex;align-items:center;padding:6px 14px;border-radius:999px;font-size:13px;
+        background:linear-gradient(90deg,var(--brand-soft),#e3f6fb);color:var(--brand);border:1px solid #f0c9e8}
     .btn-sm{padding:4px 10px;font-size:12px}
-    .thumb{width:72px;height:72px;border-radius:50%;object-fit:cover}
+    .thumb{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #fff;box-shadow:0 2px 8px rgba(168,110,200,.2)}
     .thumb-sm{max-width:72px;border-radius:10px}`;
 
         function transcript({ channel, messages, owner, userMap = {} }) {
@@ -403,31 +427,36 @@ const createWeb = (function () {
             return `<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHtml(channel.name)} · ${escapeHtml(shopName)}</title>${FAVICON}
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;800&display=swap" rel="stylesheet">
+${GFONTS}
 <style>${BASE_CSS}
-    .hero{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin-bottom:22px}
-    .hero h1{font-size:24px;font-weight:800}
-    .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .hero{position:relative;overflow:hidden;background:var(--card);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+        border:1px solid rgba(255,255,255,.7);border-radius:20px;padding:24px 26px;margin-bottom:22px;box-shadow:var(--shadow-soft)}
+    .hero::before{content:'✨';position:absolute;right:18px;top:14px;font-size:22px;opacity:.55}
+    .hero h1{font-size:25px;font-weight:800;background:linear-gradient(90deg,var(--brand),var(--accent-2));
+        -webkit-background-clip:text;background-clip:text;color:transparent;display:inline-block}
+    .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
     .row{display:flex;gap:12px;margin-top:14px}
     .row.cont{margin-top:3px;padding-left:52px;position:relative}
     .row.cont .t{position:absolute;left:0;width:44px;text-align:right;font-size:10px;color:var(--text-faint);opacity:0;padding-top:8px}
     .row.cont:hover .t{opacity:1}
-    .av{width:40px;height:40px;border-radius:50%;flex-shrink:0;object-fit:cover}
-    .bubble{background:var(--card);border:1px solid var(--line);border-radius:4px 16px 16px 16px;padding:10px 14px;min-width:0;max-width:100%;overflow-wrap:anywhere}
-    .row.bot .bubble{background:var(--brand-soft);border-color:#b7d8d1}
+    .av{width:40px;height:40px;border-radius:50%;flex-shrink:0;object-fit:cover;border:2px solid #fff;box-shadow:0 2px 6px rgba(168,110,200,.25)}
+    .bubble{background:var(--card-solid);border:1px solid var(--line);border-radius:4px 16px 16px 16px;padding:10px 14px;min-width:0;max-width:100%;overflow-wrap:anywhere;box-shadow:0 2px 8px rgba(168,110,200,.06)}
+    .row.bot .bubble{background:linear-gradient(135deg,#fdf0fb,#eaf9fd);border-color:#f0c9e8}
     .who{display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap}
-    .who i{background:var(--pop);color:#fff;font-style:normal;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px}
+    .who b{color:var(--text-primary)}
+    .who i{background:linear-gradient(90deg,var(--pink),var(--purple));color:#fff;font-style:normal;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px}
     .who span{font-size:11px;color:var(--text-faint)}
     .text{white-space:pre-wrap;color:var(--text-secondary)}
-    .att{max-width:100%;max-height:320px;border-radius:12px;margin-top:8px;display:block}
-    .end{text-align:center;color:var(--text-faint);font-size:12px;margin-top:36px}
+    .att{max-width:100%;max-height:320px;border-radius:12px;margin-top:8px;display:block;border:1px solid var(--line)}
+    .end{text-align:center;color:var(--text-faint);font-size:13px;margin-top:40px;letter-spacing:.3px}
+    .end::before,.end::after{content:'🎀';margin:0 10px;opacity:.6}
 </style></head><body>
-<div class="top"><div class="top-in"><a class="shop" href="/">${escapeHtml(shopName)}</a><span class="chip">Transcript</span></div></div>
+<div class="top"><div class="top-in"><a class="shop" href="/">${escapeHtml(shopName)}</a><span class="chip">📄 Transcript</span></div></div>
 <div class="wrap">
-    <div class="hero"><h1>${escapeHtml(channel.name)}</h1>
+    <div class="hero"><h1>#${escapeHtml(channel.name)}</h1>
         <div class="meta"><span class="chip">👤 ${escapeHtml(owner.tag)}</span><span class="chip">💬 ${total} ข้อความ</span><span class="chip">🕐 ${fmt(created)}</span></div></div>
     ${html}
-    <div class="end">— จบบทสนทนา —</div>
+    <div class="end">จบบทสนทนา</div>
 </div></body></html>`;
         }
 
@@ -446,27 +475,39 @@ const createWeb = (function () {
             return `<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Transcripts · ${escapeHtml(shopName)}</title>${FAVICON}
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;800&display=swap" rel="stylesheet">
+${GFONTS}
 <style>${BASE_CSS}
-    .head{text-align:center;padding:28px 0 18px}
-    .head h1{font-size:30px;font-weight:800;color:var(--brand)}
-    .head p{color:var(--text-muted)}
-    .stats{display:flex;justify-content:center;gap:12px;margin:18px 0;flex-wrap:wrap}
-    .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 24px;text-align:center}
-    .stat b{display:block;font-size:24px;color:var(--pop)}
-    .stat span{font-size:12px;color:var(--text-muted)}
-    #q{display:block;width:100%;max-width:420px;margin:0 auto 22px;padding:11px 18px;border-radius:999px;border:1px solid var(--line);background:var(--card);font:inherit;outline:none}
-    #q:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;text-decoration:none;color:inherit;transition:.15s}
-    .card:hover{transform:translateY(-3px);border-color:var(--pop);box-shadow:0 8px 20px rgba(249,115,22,.15)}
-    .c-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-    .c-top small{color:var(--text-faint)}
-    .card h3{font-size:16px;margin-bottom:4px;overflow-wrap:anywhere}
+    .head{position:relative;text-align:center;padding:36px 20px 22px}
+    .head::before{content:'✨ 🎀 ✨';position:absolute;top:2px;left:50%;transform:translateX(-50%);font-size:14px;opacity:.6;letter-spacing:6px}
+    .head h1{font-size:32px;font-weight:800;margin-top:6px;
+        background:linear-gradient(90deg,var(--pink),var(--purple) 50%,var(--accent-2));
+        -webkit-background-clip:text;background-clip:text;color:transparent}
+    .head p{color:var(--text-muted);margin-top:6px}
+    .stats{display:flex;justify-content:center;gap:14px;margin:20px 0;flex-wrap:wrap}
+    .stat{background:var(--card);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.7);
+        border-radius:16px;padding:14px 28px;text-align:center;box-shadow:var(--shadow-soft)}
+    .stat b{display:block;font-size:26px;background:linear-gradient(90deg,var(--pink),var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent}
+    .stat span{font-size:12px;color:var(--text-muted);font-weight:600}
+    #q{display:block;width:100%;max-width:420px;margin:0 auto 24px;padding:12px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.7);
+        background:var(--card);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font:inherit;outline:none;box-shadow:0 2px 12px rgba(168,110,200,.1)}
+    #q:focus{border-color:var(--pink);box-shadow:0 0 0 3px rgba(244,114,182,.18)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+    .card{position:relative;background:var(--card);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+        border:1px solid rgba(255,255,255,.7);border-radius:18px;padding:17px;text-decoration:none;color:inherit;
+        transition:.18s ease;box-shadow:0 4px 16px rgba(168,110,200,.1)}
+    .card::before{content:'';position:absolute;inset:0;border-radius:18px;padding:1px;
+        background:linear-gradient(135deg,var(--pink),var(--purple),var(--cyan));opacity:0;transition:.18s;
+        -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+    .card:hover{transform:translateY(-4px);box-shadow:0 14px 28px rgba(168,110,200,.22)}
+    .card:hover::before{opacity:1}
+    .c-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+    .c-top small{color:var(--text-faint);font-weight:600}
+    .card h3{font-size:16px;margin-bottom:5px;overflow-wrap:anywhere;color:var(--text-primary)}
     .card p{font-size:13px;color:var(--text-muted)}
-    .empty{text-align:center;color:var(--text-faint);padding:50px 0}
+    .empty{text-align:center;color:var(--text-faint);padding:60px 0;font-size:15px}
+    .empty::before{content:'🐰';display:block;font-size:40px;margin-bottom:10px}
 </style></head><body>
-<div class="top"><div class="top-in"><span class="shop">${escapeHtml(shopName)}</span><span class="chip">Ticket Archive</span></div></div>
+<div class="top"><div class="top-in"><span class="shop">${escapeHtml(shopName)}</span><span class="chip">🎫 Ticket Archive</span></div></div>
 <div class="wrap">
     <div class="head"><h1>บันทึกบทสนทนา</h1><p>เลือกการ์ดเพื่อดู Transcript</p></div>
     <div class="stats"><div class="stat"><b>${sorted.length}</b><span>Transcripts</span></div><div class="stat"><b>${msgs}</b><span>Messages</span></div></div>
@@ -1337,14 +1378,26 @@ app.get('/transcript/:id', (req, res) => {
     if (!fs.existsSync(filePath)) {
         return res.status(404).send(`<!DOCTYPE html>
 <html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>404 — Not Found</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐰</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;800&family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
 <style>
-    body{font-family:'Noto Sans Thai',-apple-system,sans-serif;background:#f6f1e9;color:#1f2a2e;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center;padding:20px}
-    .code{font-size:96px;font-weight:800;color:#f97316;line-height:1;margin-bottom:12px}
-    h1{font-size:22px;margin-bottom:10px}
-    p{color:#6b7a80;font-size:14px}
-    a{display:inline-block;margin-top:28px;background:#0f766e;color:#fff;padding:11px 26px;border-radius:999px;text-decoration:none;font-weight:600;font-size:14px}
+    *{box-sizing:border-box}
+    body{font-family:'Noto Sans Thai',-apple-system,sans-serif;color:#3a2a52;display:flex;align-items:center;justify-content:center;
+        min-height:100vh;margin:0;text-align:center;padding:20px;
+        background:linear-gradient(145deg,#ffd9ef 0%,#e3c9fb 45%,#bdeeff 100%)}
+    .card{background:rgba(255,255,255,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+        border:1px solid rgba(255,255,255,.7);border-radius:22px;padding:40px 36px;box-shadow:0 14px 34px rgba(168,110,200,.2)}
+    .bunny{font-size:48px;margin-bottom:6px}
+    .code{font-family:'Baloo 2',sans-serif;font-size:72px;font-weight:800;line-height:1;margin-bottom:10px;
+        background:linear-gradient(90deg,#f472b6,#a78bfa 55%,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent}
+    h1{font-family:'Baloo 2',sans-serif;font-size:21px;margin-bottom:8px;color:#3a2a52}
+    p{color:#8b78a8;font-size:14px}
+    a{display:inline-block;margin-top:26px;background:linear-gradient(90deg,#f472b6,#a78bfa);color:#fff;padding:11px 28px;
+        border-radius:999px;text-decoration:none;font-weight:700;font-size:14px;box-shadow:0 6px 16px rgba(167,139,250,.35)}
 </style></head>
-<body><div>
+<body><div class="card">
+    <div class="bunny">🐰</div>
     <div class="code">404</div>
     <h1>ไม่พบ Transcript</h1>
     <p>ลิงก์นี้อาจหมดอายุ ถูกลบไปแล้ว หรือ ID ไม่ถูกต้อง</p>
