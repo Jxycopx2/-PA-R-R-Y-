@@ -870,7 +870,7 @@ async function createTicketChannel(interaction, ticketTypeId) {
                                 {
                                     type: 9,
                                     components: [
-                                        { type: 10, content: `# 🎫 Ticket ใหม่ #${ticketNumberStr}\n**<@${user.id}> เปิด Ticket**` },
+                                        { type: 10, content: `- \`🎫\` **Ticket ใหม่** #${ticketNumberStr}\n\nn- **<@${user.id}> เปิด Ticket**` },
                                     ],
                                     accessory: {
                                         type: 11,
@@ -1166,9 +1166,6 @@ async function transcriptTicket(interaction) {
         });
     } catch (err) {
         console.error('Transcript error:', err.message);
-
-        // Fallback: owner couldn't be DMed (DMs off / blocked bot / no mutual server).
-        // Post the link in the ticket channel instead, so it isn't lost.
         let fallbackUrl = null;
         try {
             const sortedMsgs = await fetchAllMessages(channel, 2000);
@@ -1212,9 +1209,9 @@ async function transcriptTicket(interaction) {
                             {
                                 type: 10,
                                 content:
-                                    `# ⚠️ ส่ง DM ไม่สำเร็จ\n` +
-                                    `ไม่สามารถส่งลิงก์บันทึกไปหา <@${ownerId}> ได้ (อาจปิดรับ DM จากเซิร์ฟเวอร์)\n` +
-                                    `แนบลิงก์ไว้ที่นี่แทน:`,
+                                    `- \`⚠️\` **ส่ง DM ไม่สำเร็จ**\n` +
+                                    `- **ไม่สามารถส่งลิงก์บันทึกไปหา** <@${ownerId}> **ได้** **(อาจปิดรับ DM จากเซิร์ฟเวอร์)**\n` +
+                                    `- **แนบลิงก์ไว้ที่นี่แทน:**`,
                             },
                             { type: 14, divider: false, spacing: 1 },
                             isPublicUrl
@@ -1240,9 +1237,9 @@ async function transcriptTicket(interaction) {
                             {
                                 type: 10,
                                 content:
-                                    `# ⚠️ ส่ง DM ไม่สำเร็จ\n` +
-                                    `บันทึกถูกสร้างสำเร็จแล้ว แต่ส่งไปหา <@${ownerId}> ทาง DM ไม่ได้\n` +
-                                    `ได้แนบลิงก์ไว้ในห้องนี้แทนแล้ว`,
+                                    `- \`⚠️\` **ส่ง DM ไม่สำเร็จ**\n` +
+                                    `- **บันทึกถูกสร้างสำเร็จแล้ว แต่ส่งไปหา** <@${ownerId}> **ทาง DM** **ไม่ได้**\n` +
+                                    `- **ได้แนบลิงก์ไว้ในห้องนี้แทนแล้ว**`,
                             },
                         ],
                     },
@@ -1250,7 +1247,6 @@ async function transcriptTicket(interaction) {
             });
         }
 
-        // Transcript couldn't even be generated/saved.
         return interaction.editReply({
             flags: 32768,
             components: [
