@@ -385,7 +385,13 @@ const createWeb = (function () {
         function transcript({ channel, messages, owner, userMap = {} }) {
             const total = messages.length;
             const created = messages[0] ? messages[0].createdTimestamp : Date.now();
-            const fmt = (ts, o) => new Date(ts).toLocaleString('th-TH', o);
+
+            // กำหนด Timezone เป็นเวลาไทย ('Asia/Bangkok') เสมอ
+            const fmt = (ts, o = {}) => new Date(ts).toLocaleString('th-TH', {
+                timeZone: 'Asia/Bangkok',
+                calendar: 'buddhist', // หากต้องการปี พ.ศ. ให้คงไว้ / ถ้าต้องการ ค.ศ. ให้เปลี่ยนเป็น 'gregory'
+                ...o
+            });
 
             let html = '';
             let lastId = null, lastTs = 0;
@@ -414,13 +420,13 @@ const createWeb = (function () {
                 m.components?.forEach(c => { body += renderComponent(c, userMap); });
                 if (!body) body = `<div class="text" style="color:var(--text-faint)">[ไม่มีข้อความ]</div>`;
 
-                const time = fmt(m.createdTimestamp, { hour: '2-digit', minute: '2-digit' });
+                const time = fmt(m.createdTimestamp, { hour: '2-digit', minute: '2-digit', hour12: false });
                 if (same) {
                     html += `<div class="row cont"><span class="t">${time}</span><div class="bubble">${body}</div></div>`;
                 } else {
                     html += `<div class="row ${a.bot ? 'bot' : ''}">
                     <img class="av" src="${a.displayAvatarURL({ extension: 'png', size: 128 })}">
-                    <div class="bubble"><div class="who"><b>${escapeHtml(a.globalName || a.username)}</b>${a.bot ? '<i>BOT</i>' : ''}<span>${fmt(m.createdTimestamp, { dateStyle: 'short', timeStyle: 'short' })}</span></div>${body}</div></div>`;
+                    <div class="bubble"><div class="who"><b>${escapeHtml(a.globalName || a.username)}</b>${a.bot ? '<i>BOT</i>' : ''}<span>${fmt(m.createdTimestamp, { dateStyle: 'short', timeStyle: 'short', hour12: false })}</span></div>${body}</div></div>`;
                 }
             }
 
@@ -454,7 +460,7 @@ ${GFONTS}
 <div class="top"><div class="top-in"><a class="shop" href="/">${escapeHtml(shopName)}</a><span class="chip">📄 Transcript</span></div></div>
 <div class="wrap">
     <div class="hero"><h1>#${escapeHtml(channel.name)}</h1>
-        <div class="meta"><span class="chip">👤 ${escapeHtml(owner.tag)}</span><span class="chip">💬 ${total} ข้อความ</span><span class="chip">🕐 ${fmt(created)}</span></div></div>
+        <div class="meta"><span class="chip">👤 ${escapeHtml(owner.tag)}</span><span class="chip">💬 ${total} ข้อความ</span><span class="chip">🕐 ${fmt(created, { dateStyle: 'short', timeStyle: 'short', hour12: false })}</span></div></div>
     ${html}
     <div class="end">จบบทสนทนา</div>
 </div></body></html>`;
