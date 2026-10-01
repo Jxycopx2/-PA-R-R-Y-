@@ -470,20 +470,21 @@ ${GFONTS}
             const sorted = [...safeList].sort((a, b) => b.createdAt - a.createdAt);
             const msgs = sorted.reduce((s, t) => s + (t.messageCount || 0), 0);
             const cards = sorted.map(t => {
-                const avatarUrl = t.ownerAvatar || t.owner?.displayAvatarURL?.({ extension: 'png', size: 128 }) || 'https://cdn.discordapp.com/embed/avatars/0.png';
+                // ดึงรูป Avatar จากตัวแปร ownerAvatar, owner.displayAvatarURL, หรือเผื่อเป็นฟังก์ชัน/สตริงอื่นๆ
+                const avatarUrl = t.ownerAvatar || 
+                                  (typeof t.owner?.displayAvatarURL === 'function' ? t.owner.displayAvatarURL({ extension: 'png', size: 128 }) : null) || 
+                                  t.owner?.avatarURL || 
+                                  'https://cdn.discordapp.com/embed/avatars/0.png';
                 
                 return `
             <div class="card" data-s="${escapeHtml((t.channelName + ' ' + t.ownerTag).toLowerCase())}">
-                <div class="c-top">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <img class="card-avatar" src="${escapeHtml(avatarUrl)}" alt="Avatar">
-                        <span class="chip">${escapeHtml(t.ticketType || 'other')}</span>
-                    </div>
-                    <small>${timeAgo(t.createdAt)}</small>
-                </div>
+                <div class="c-top"><span class="chip">${escapeHtml(t.ticketType || 'other')}</span><small>${timeAgo(t.createdAt)}</small></div>
                 <h3>${escapeHtml(t.channelName)}</h3>
-                <p>👤 ${escapeHtml(t.ownerTag)}</p>
-                <p>💬 ${t.messageCount || 0} ข้อความ</p>
+                <div class="owner-info">
+                    <img class="owner-avatar" src="${escapeHtml(avatarUrl)}" alt="Avatar">
+                    <p>👤 ${escapeHtml(t.ownerTag)}</p>
+                </div>
+                <p style="margin-top:4px;">💬 ${t.messageCount || 0} ข้อความ</p>
             </div>`;
             }).join('');
 
@@ -510,11 +511,12 @@ ${GFONTS}
     .card{position:relative;background:var(--card);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
         border:1px solid rgba(255,255,255,.7);border-radius:18px;padding:17px;color:inherit;
         box-shadow:0 4px 16px rgba(168,110,200,.1)}
-    .card-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid #fff;box-shadow:0 2px 5px rgba(168,110,200,.2)}
+    .owner-info{display:flex;align-items:center;gap:8px;margin-top:4px}
+    .owner-avatar{width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid #fff;box-shadow:0 1px 4px rgba(168,110,200,.2)}
     .c-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
     .c-top small{color:var(--text-faint);font-weight:600}
-    .card h3{font-size:16px;margin-bottom:5px;overflow-wrap:anywhere;color:var(--text-primary)}
-    .card p{font-size:13px;color:var(--text-muted)}
+    .card h3{font-size:16px;margin-bottom:2px;overflow-wrap:anywhere;color:var(--text-primary)}
+    .card p{font-size:13px;color:var(--text-muted);display:inline}
     .empty{text-align:center;color:var(--text-faint);padding:60px 0;font-size:15px}
     .empty::before{content:'🐰';display:block;font-size:40px;margin-bottom:10px}
 </style></head><body>
